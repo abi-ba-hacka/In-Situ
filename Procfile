@@ -1,1 +1,1 @@
-web: gunicorn fb-beerbot:app
+web: gunicorn fb-beerbot:app --log-file=-
