@@ -1,1 +1,1 @@
-web: gunicorn beerbot:app
+web: gunicorn fb-beerbot:app
