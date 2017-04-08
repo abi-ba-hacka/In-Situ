@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views import generic
 from django.http.response import HttpResponse
 
-import json, re, requests
+import json, os, re, requests
 from pprint import pprint
 
 
@@ -15,6 +15,7 @@ PAGE_ACCESS_TOKEN = \
     u'EAAZAgryR1MzwBAMDwZArm05snOdaWDsw5lsxm9IGIrrmjmFWel94mUEVbbBBZC1TYVYwk8d \
     kl9H1HuUE5DnQiXa0UQp0Sr36kOHtL4ZBvIKgmvgEXv5saMOwLCDbnK8JTcC7gZC7g59wBtqYt \
     oZBYZC1vX7jJRqa3Vb6VvOZACGosQZDZD'
+VERIFY_TOKEN = u'782654920'
 POSSIBLE_RESPONSES = {
     'go out': ["Where would you like to go tonight?"]
 }
@@ -22,7 +23,7 @@ POSSIBLE_RESPONSES = {
 
 class BotView(generic.View):
     def get(self, request, *args, **kwargs):
-        if self.request.GET['hub.verify_token'] == '782654920':
+        if self.request.GET['hub.verify_token'] == os.environ['VERIFY_TOKEN']:
             return HttpResponse(self.request.GET['hub.challenge'])
         else:
             return HttpResponse('Error, invalid token')
@@ -66,7 +67,7 @@ def post_facebook_message(fbid, recieved_message):
             user_details_url = "https://graph.facebook.com/v2.6/%s"%fbid
             user_details_params = {
                 'fields': 'first_name,last_name,profile_pic',
-                'access_token': PAGE_ACCESS_TOKEN
+                'access_token': os.environ['PAGE_ACCESS_TOKEN']
             }
             user_details = requests.get(user_details_url, user_details_params).json()
 
@@ -83,7 +84,7 @@ Type 'go out' for nightlife suggestions!"
 
     post_message_url = \
         'https://graph.facebook.com/v2.6/me/messages?access_token={}'.format(
-            PAGE_ACCESS_TOKEN
+            os.environ['PAGE_ACCESS_TOKEN']
         )
     response_msg = json.dumps({
         "recipient": {"id": fbid},
