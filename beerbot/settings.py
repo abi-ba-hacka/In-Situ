@@ -25,7 +25,10 @@ SECRET_KEY = 'axu!jho9)z)y*e_)^op9%vo^+&&$8+hlt$#fac7&@8ak53uj7a'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [u'fff20c3f.ngrok.io', u'fb-beerbot.herokuapp.com']
+ALLOWED_HOSTS = [
+    u'fff20c3f.ngrok.io',
+    u'fb-beerbot.herokuapp.com',
+]
 
 
 # Application definition
