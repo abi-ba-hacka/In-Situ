@@ -5,4 +5,4 @@ from django.apps import AppConfig
 
 
 class BotConfig(AppConfig):
-    name = 'fb_beerbot'
+    name = 'fb-beerbot'
