@@ -24,7 +24,7 @@ POSSIBLE_RESPONSES = {
 
 
 POSSIBLE_BARS = {
-    'Barrio Norte': [{
+    'barrio norte': [{
         'name': 'Patagonia Facultad de Medicina',
         'address': 'Pasteur 706'
     }, {
@@ -34,33 +34,33 @@ POSSIBLE_BARS = {
         'name': 'Patagonia Arenales',
         'address': 'Arenales 2707'
     }],
-    'San Telmo': [{
+    'san telmo': [{
         'name': 'Patagonia San Telmo – Perú',
         'address': 'Perú 602'
     }, {
         'name': 'Patagonia San Telmo – Plaza Dorrego',
         'address': 'Don Anselmo Aieta 1081'
     }],
-    'Palermo': [{
+    'palermo': [{
         'name': 'Patagonia Córdoba y Mario Bravo',
         'address': 'Av. Córdoba 3573'
     }, {
         'name': 'Patagonia Distrito Arcos',
         'address': 'Paraguay 4979'
     }],
-    'Recoleta': [{
+    'recoleta': [{
         'name': 'Patagonia Callao y Viamonte',
         'address': 'Callao 650'
     }],
-    'Chacarita': [{
+    'chacarita': [{
         'name': 'Patagonia Paraguay y Riobamba',
         'address': 'Paraguay 1900'
     }],
-    'Cañitas': [{
+    'cañitas': [{
         'name': 'Patagonia Cañitas',
         'address': 'Andres Arguibel 2831'
     }],
-    'Monsterrat': [{
+    'monsterrat': [{
         'name': 'Patagonia Av. de Mayo',
         'address': 'Av de Mayo 702'
     }],
@@ -170,7 +170,7 @@ def find_bar(request):
 
     if neighborhood:
         # This is where we could use a weather service api to get the weather.
-        random_bar = choice(POSSIBLE_BARS[neighborhood])
+        random_bar = choice(POSSIBLE_BARS[neighborhood.lower()])
         context['bar_name'] = random_bar['name']
         context['bar_address'] = random_bar['address']
         # TODO: Put in Location response here (Google Maps or otherwise).
