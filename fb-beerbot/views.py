@@ -47,7 +47,7 @@ class BotView(generic.View):
                     # Print the message to the terminal
                     pprint(message)
 
-                    # Assuming the sender only sends text.
+                    # Assuming the sender only sends text
                     # Non-text messages like stickers, audio, pictures
                     # are sent as attachments and must be handled accordingly.
                     post_facebook_message(
