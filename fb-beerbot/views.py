@@ -26,7 +26,7 @@ class BotView(generic.View):
         if self.request.GET['hub.verify_token'] == os.environ.get('VERIFY_TOKEN'):
             return HttpResponse(self.request.GET['hub.challenge'])
         else:
-            return HttpResponse('Error, invalid token')
+            return HttpResponse('Error, invalid token.')
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
