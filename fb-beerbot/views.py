@@ -135,7 +135,7 @@ def send(request, response):
     text = response['text']
 
     # send message
-    fb_message(fb_id, text)
+    post_fb_message(fb_id, text)
 
 
 def get_user_name(fbid):
