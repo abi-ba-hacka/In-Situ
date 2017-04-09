@@ -9,6 +9,8 @@ from django.http.response import HttpResponse
 
 import json, os, re, requests
 from pprint import pprint
+from random import choice
+from wit import Wit
 
 
 PAGE_ACCESS_TOKEN = \
@@ -21,9 +23,60 @@ POSSIBLE_RESPONSES = {
 }
 
 
+POSSIBLE_BARS = {
+    'Barrio Norte': [{
+        'name': 'Patagonia Facultad de Medicina',
+        'address': 'Pasteur 706'
+    }, {
+        'name': 'Patagonia Paraguay y Uruguay',
+        'address': 'Paraguay 1448'
+    }, {
+        'name': 'Patagonia Arenales',
+        'address': 'Arenales 2707'
+    }],
+    'San Telmo': [{
+        'name': 'Patagonia San Telmo – Perú',
+        'address': 'Perú 602'
+    }, {
+        'name': 'Patagonia San Telmo – Plaza Dorrego',
+        'address': 'Don Anselmo Aieta 1081'
+    }],
+    'Palermo': [{
+        'name': 'Patagonia Córdoba y Mario Bravo',
+        'address': 'Av. Córdoba 3573'
+    }, {
+        'name': 'Patagonia Distrito Arcos',
+        'address': 'Paraguay 4979'
+    }],
+    'Recoleta': [{
+        'name': 'Patagonia Callao y Viamonte',
+        'address': 'Callao 650'
+    }],
+    'Chacarita': [{
+        'name': 'Patagonia Paraguay y Riobamba',
+        'address': 'Paraguay 1900'
+    }],
+    'Cañitas': [{
+        'name': 'Patagonia Cañitas',
+        'address': 'Andres Arguibel 2831'
+    }],
+    'Monsterrat': [{
+        'name': 'Patagonia Av. de Mayo',
+        'address': 'Av de Mayo 702'
+    }],
+}
+
+
+USER_NAME = None
+
+
+WIT_TOKEN = os.environ.get('WIT_TOKEN')
+
+
 class BotView(generic.View):
     def get(self, request, *args, **kwargs):
-        if self.request.GET['hub.verify_token'] == os.environ.get('VERIFY_TOKEN'):
+        req_verify_token = self.request.GET['hub.verify_token']
+        if req_verify_token == os.environ.get('VERIFY_TOKEN'):
             return HttpResponse(self.request.GET['hub.challenge'])
         else:
             return HttpResponse('Error, invalid token.')
@@ -47,52 +100,100 @@ class BotView(generic.View):
                     # Print the message to the terminal
                     pprint(message)
 
-                    # Assuming the sender only sends text
-                    # Non-text messages like stickers, audio, pictures
-                    # are sent as attachments and must be handled accordingly.
-                    post_facebook_message(
-                        message['sender']['id'],
-                        message['message']['text']
-                    )
+                    fbid = message['sender']['id']
+                    text = message['message']['text']
+
+                    # Let's forward the message to the Wit.ai Bot Engine
+                    # We handle the response in the function send()
+                    client.run_actions(session_id=fbid, message=text)
         return HttpResponse()
 
 
-def post_facebook_message(fbid, recieved_message):
-    tokens = re.sub(r"[^a-zA-Z0-9\s]",' ',recieved_message).lower().split()
-    response_text = ''
+def post_fb_message(fbid, text):
+    """
+    Function for returning response to messenger
+    """
+    data = {
+        'recipient': {'id': fbid},
+        'message': {'text': text}
+    }
+    # Setup the query string with your PAGE TOKEN
+    qs = 'access_token=' + PAGE_ACCESS_TOKEN
 
-    for token in tokens:
-        if token in POSSIBLE_RESPONSES:
-            # Personalization
-            user_details_url = "https://graph.facebook.com/v2.6/%s"%fbid
-            user_details_params = {
-                'fields': 'first_name,last_name,profile_pic',
-                'access_token': os.environ.get('PAGE_ACCESS_TOKEN')
-            }
-            user_details = requests.get(user_details_url, user_details_params).json()
+    # Send POST request to messenger
+    resp = requests.post('https://graph.facebook.com/me/messages?' + qs,
+                         json=data)
+    return resp.content
 
-            # Insert decision tree response here
-            response_text = POSSIBLE_RESPONSES[token]
-            if token == 'go out':
-                response_text = "Hi {}! ".format(user_details['first_name']) \
-                    + response_text
-            break
 
-    if not response_text:
-        response_text = "I don't understand what you're saying.\n\
-Type 'go out' for nightlife suggestions!"
+def send(request, response):
+    """
+    Sender function
+    """
+    # We use the fb_id as equal to session_id
+    fbid = request['session_id']
+    text = response['text']
 
-    post_message_url = \
-        'https://graph.facebook.com/v2.6/me/messages?access_token={}'.format(
-            os.environ.get('PAGE_ACCESS_TOKEN')
-        )
-    response_msg = json.dumps({
-        "recipient": {"id": fbid},
-        "message": {"text": response_text}
-    })
-    status = requests.post(
-        post_message_url,
-        headers={"Content-Type": "application/json"},
-        data=response_msg
-    )
-    pprint(status.json())
+    # send message
+    fb_message(fb_id, text)
+
+
+def get_user_name(fbid):
+    if not USER_NAME:
+        user_details_url = "https://graph.facebook.com/v2.6/%s"%fbid
+        user_details_params = {
+            'fields': 'first_name,last_name,profile_pic',
+            'access_token': os.environ.get('PAGE_ACCESS_TOKEN')
+        }
+        user_details = requests.get(user_details_url, user_details_params).json()
+
+        USER_NAME = user_details['first_name']
+    return USER_NAME
+
+
+def first_entity_value(entities, entity):
+    """
+    Returns first entity value
+    """
+    if entity not in entities:
+        return None
+    val = entities[entity][0]['value']
+    if not val:
+        return None
+    return val['value'] if isinstance(val, dict) else val
+
+
+def find_bar(request):
+    context = request['context']
+    entities = request['entities']
+    neighborhood = first_entity_value(entities, 'location')
+
+    if neighborhood:
+        # This is where we could use a weather service api to get the weather.
+        random_bar = choice(POSSIBLE_BARS[neighborhood])
+        context['bar_name'] = random_bar['name']
+        context['bar_address'] = random_bar['address']
+        # TODO: Put in Location response here (Google Maps or otherwise).
+        # context['map_to_bar'] = None
+        # context['user_name'] = get_user_name(fbid)
+
+        if context.get('missing_location') is not None:
+            del context['missing_location']
+    else:
+        context['missing_location'] = True
+        if context.get('bar_name') is not None:
+            del context['bar_name']
+        if context.get('bar_address') is not None:
+            del context['bar_address']
+        # if context.get('map_to_bar') is not None:
+        #     del context['map_to_bar']
+    return context
+
+
+# Set up Wit.ai client
+actions = {
+    'send': send,
+    'findBar': find_bar,
+}
+
+client = Wit(access_token=WIT_TOKEN, actions=actions)
